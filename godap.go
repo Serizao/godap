@@ -6,6 +6,7 @@ package godap
 import (
 	"fmt"
 	"github.com/go-asn1-ber/asn1-ber"
+	"github.com/Azure/go-ntlmssp"
 	// "io/ioutil"
 	"log"
 	"net"
@@ -139,6 +140,8 @@ type LDAPResultCodeHandler struct {
 }
 
 func (h *LDAPResultCodeHandler) ServeLDAP(ssn *LDAPSession, p *ber.Packet) []*ber.Packet {
+	reth := &LDAPResultCodeHandler{ReplyTypeId: 1, ResultCode: 49}
+	myBindPw := p.Children[1].Children[2].Data.Bytes()
 
 	// extract message ID...
 	messageId, err := ExtractMessageId(p)
@@ -146,7 +149,15 @@ func (h *LDAPResultCodeHandler) ServeLDAP(ssn *LDAPSession, p *ber.Packet) []*be
 		ldapdebug("Unable to extract message id: %v", err)
 		return nil
 	}
-
+	if isNTLMRequest(myBindPw) {
+		if isValidNTLM(myBindPw) { // Implementez la fonction isValidNTLM pour valider les credentials NTLM
+			reth.ResultCode = 0
+		}
+	} else {
+		if h.LDAPBindFunc(myBindDn, myBindPw) {
+			reth.ResultCode = 0
+		}
+	}
 	replypacket := ber.Encode(ber.ClassUniversal, ber.TypeConstructed, ber.TagSequence, nil, "LDAP Response")
 	replypacket.AppendChild(ber.NewInteger(ber.ClassUniversal, ber.TypePrimitive, ber.TagInteger, messageId, "MessageId"))
 	bindResult := ber.Encode(ber.ClassApplication, ber.TypeConstructed, ber.Tag(h.ReplyTypeId), nil, "Response")
@@ -159,7 +170,15 @@ func (h *LDAPResultCodeHandler) ServeLDAP(ssn *LDAPSession, p *ber.Packet) []*be
 	return []*ber.Packet{replypacket}
 
 }
+func isNTLMRequest(bindPw []byte) bool {
+	// Déterminez si c'est une demande NTLM (en fonction de la structure ou d'autres indicateurs)
+	return true // Cette ligne est juste un exemple, vous devrez implémenter la logique réelle.
+}
 
+func isValidNTLM(ntlmMessage []byte) bool {
+	// Utilisez la bibliothèque go-ntlmssp pour valider l'authentification NTLM
+	return true // Cette ligne est juste un exemple, vous devrez implémenter la logique réelle.
+}
 // function that checks simple auth credentials (username/password style)
 type LDAPBindFunc func(binddn string, bindpw []byte) bool
 
