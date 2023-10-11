@@ -170,14 +170,16 @@ func (h *LDAPResultCodeHandler) ServeLDAP(ssn *LDAPSession, p *ber.Packet) []*be
 	return []*ber.Packet{replypacket}
 
 }
+
 func isNTLMRequest(bindPw []byte) bool {
 	// Déterminez si c'est une demande NTLM (en fonction de la structure ou d'autres indicateurs)
-	return true // Cette ligne est juste un exemple, vous devrez implémenter la logique réelle.
+	return string(bindPw[:5]) == "NTLM " // Ceci est basique; assurez-vous de valider correctement.
 }
 
 func isValidNTLM(ntlmMessage []byte) bool {
-	// Utilisez la bibliothèque go-ntlmssp pour valider l'authentification NTLM
-	return true // Cette ligne est juste un exemple, vous devrez implémenter la logique réelle.
+	// Pour cet exemple, je simule une validation; dans un vrai scénario, vous voudriez peut-être configurer et interroger un serveur NTLM réel.
+	// Consultez la documentation de go-ntlmssp pour savoir comment l'utiliser de manière exhaustive.
+	return ntlmssp.IsNegotiateMessage(ntlmMessage)
 }
 // function that checks simple auth credentials (username/password style)
 type LDAPBindFunc func(binddn string, bindpw []byte) bool
